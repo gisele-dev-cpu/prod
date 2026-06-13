@@ -17,6 +17,12 @@ jobs:
       - name: checkout source code
         uses: actions/checkout@v4
 
+      - name: checkout xashy-webapp repo
+        uses: actions/checkout@v4
+        with:
+          repository: gisele-cpu-dev/xashy-webapp
+          path: xashy-webapp
+          
       - name: set up QEMU
         uses: docker/setup-qemu-action@v3
 
