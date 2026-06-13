@@ -1,1 +1,67 @@
+name: docker build and push
 
+on: 
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v4
+
+      - name: set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: set up docker building
+        uses: docker/setup-building-action@v3
+
+      - name: login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: docker build -t xashy/dev:latest
+
+      - name: Push Docker image
+        run: docker push xashy/dev:latest
+
+      - name: Fix workspace permissions
+        run: chmod - R 777 ${{ github.workspace }}
+
+      - name: Run Trivy Vulnerablinlty Scan
+        uses: aquasecurity/trivy-action@0.36.0
+          with: 
+            image-ref: 'xashy/wordpress:latest'
+            format: table
+            exit-code: '0'
+            ignore-unfixed: true
+            vuln-type: 'os, library'
+            severity: ' CRITICAL, HIGH'
+
+      - name: Run ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.12.0
+          with:
+            target: 'http://localhost:8080'
+            docker-name: 'ghcr.io/zaproxy:stable'
+            cmd_options: '-a' #scan all
+            token: ${{ secret.GITHUB_TOKEN }}
+            allow_issue_writing: true 
+            
+       - name: upload ZAP Report
+         uses: actions/upload-artifact@v4
+           with: 
+             name: zap-full-report
+             path: |
+               report.html
+               report.md
+               report.json
