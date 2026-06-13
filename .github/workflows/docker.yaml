@@ -16,6 +16,13 @@ jobs:
     steps:
       - name: checkout source code
         uses: actions/checkout@v4
+        
+      - name: Debug Repository
+        run: |
+          pwd
+          ls -la
+          echo "----- Dockerfile -----"
+          cat Dockerfile
 
       - name: checkout xashy-webapp repo
         uses: actions/checkout@v4
