@@ -20,7 +20,7 @@ jobs:
       - name: checkout xashy-webapp repo
         uses: actions/checkout@v4
         with:
-          repository: gisele-cpu-dev/xashy-webapp
+          repository: gisele-dev-cpu/xashy-webapp
           path: xashy-webapp
           
       - name: set up QEMU
