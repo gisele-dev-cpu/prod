@@ -59,7 +59,7 @@ jobs:
             exit-code: '0'
             ignore-unfixed: true
             vuln-type: 'os,library'
-            severity: ' CRITICAL,HIGH'
+            severity: 'CRITICAL,HIGH'
 
       - name: Run ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.12.0
