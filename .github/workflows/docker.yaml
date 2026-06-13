@@ -39,7 +39,7 @@ jobs:
         run: chmod -R 777 ${{ github.workspace }}
 
       - name: Run Trivy Vulnerablinlty Scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with: 
             image-ref: 'xashy/devapp:latest'
             format: 'table'
