@@ -54,8 +54,8 @@ jobs:
       - name: Build Docker image
         run: docker build -t xashy/devapp:latest .
 
-      - name: Push Docker image
-        run: docker push xashy/devapp:latest
+    #  - name: Push Docker image
+    #    run: docker push xashy/devapp:latest
 
       - name: Fix workspace permissions
         run: chmod -R 777 ${{ github.workspace }}
