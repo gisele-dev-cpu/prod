@@ -1,1 +1,105 @@
+name: Build, Test and Push
+
+on:
+ push:
+  branches:
+   - main
+
+permissions:
+ id-token: write
+ contents: read
+
+jobs:
+ docker:
+  runs-on: ubuntu-latest
+
+
+  steps:
+
+  - name: Checkout Source Code
+    uses: actions/checkout@v4
+
+  - name: Checkout xashy-webapp
+    uses: actions/checkout@v4
+    with:
+      repository: gisele-dev-cpu/xashy-webapp
+      path: xashy-webapp
+
+  - name: Configure AWS Credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+      aws-region: ${{ secrets.AWS_REGION }}
+
+  - name: Login to Amazon ECR
+    uses: aws-actions/amazon-ecr-login@v2
+
+  - name: Set up Docker Buildx
+    uses: docker/setup-buildx-action@v3
+
+  - name: Build Containers
+    env:
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    run: docker compose build
+
+  - name: Start Environment
+    env:
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    run: docker compose up -d
+
+  - name: Wait For Containers
+    run: sleep 30
+
+  - name: Verify Application
+    run: |
+      curl -I http://localhost:8080
+
+  - name: Verify Database
+    env:
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    run: |
+      docker exec mysql mysql \
+        -u$MYSQL_USER \
+        -p$MYSQL_PASSWORD \
+        -e "SHOW DATABASES;"
+
+  - name: Run Trivy Scan
+    uses: aquasecurity/trivy-action@0.36.0
+    with:
+      image-ref: 'xashy/devapp:latest'
+      format: 'table'
+      exit-code: '0'
+      output: trivy-report.txt
+      ignore-unfixed: true
+      vuln-type: 'os,library'
+      severity: 'CRITICAL,HIGH'
+
+  - name: Upload Trivy Report
+    uses: actions/upload-artifact@v4
+    with:
+      name: trivy-report
+      path: trivy-report.txt
+
+  - name: Tag Image For ECR
+    run: |
+      docker tag \
+      xashy/devapp:latest \
+      ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/xashy-devapp-repo:latest
+
+  - name: Push Image To ECR
+    run: |
+      docker push \
+      ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/xashy-devapp-repo:latest
+
+  - name: Cleanup
+    if: always()
+    run: docker compose down -v
+
 
