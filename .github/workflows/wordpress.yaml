@@ -1,0 +1,49 @@
+name: WordPress Compose Test
+
+on:
+ workflow_dispatch:
+
+jobs:
+
+ wordpress:
+  runs-on: ubuntu-latest
+
+  steps:
+
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+
+  - name: Start Environment
+    env:
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    run: docker compose up -d
+
+  - name: Wait For Startup
+    run: sleep 60
+
+  - name: Verify WordPress
+    run: |
+      curl -I http://localhost:8080
+
+  - name: Verify Database
+    env:
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    run: |
+      docker exec mysql mysql \
+        -u$MYSQL_USER \
+        -p$MYSQL_PASSWORD \
+        -e "SHOW DATABASES;"
+
+  - name: Show Running Containers
+    run: docker ps
+
+  - name: Show WordPress Logs
+    run: docker logs wordpress
+
+  - name: Cleanup
+    if: always()
+    run: docker compose down -v
