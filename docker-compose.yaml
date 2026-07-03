@@ -2,44 +2,40 @@ version: '3.8'
 
 services:
 
-wordpress:
-image: wordpress:latest
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    restart: always
 
-container_name: wordpress
+    ports:
+      - "8080:80"
 
-restart: always
+    environment:
+      WORDPRESS_DB_HOST: mysql:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
 
-ports:
-  - "8080:80"
+    depends_on:
+      - mysql
 
-environment:
-  WORDPRESS_DB_HOST: mysql:3306
-  WORDPRESS_DB_USER: ${MYSQL_USER}
-  WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
-  WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+    volumes:
+      - wordpress-data:/var/www/html
 
-depends_on:
-  - mysql
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
 
-volumes:
-  - wordpress-data:/var/www/html
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
-mysql:
-image: mysql:8
-
-container_name: mysql
-
-restart: always
-
-environment:
-  MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  MYSQL_DATABASE: ${MYSQL_DATABASE}
-  MYSQL_USER: ${MYSQL_USER}
-  MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-
-volumes:
-  - mysql-data:/var/lib/mysql
+    volumes:
+      - mysql-data:/var/lib/mysql
 
 volumes:
-wordpress-data:
-mysql-data:
+  wordpress-data:
+  mysql-data:
